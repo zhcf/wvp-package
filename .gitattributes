@@ -1,0 +1,4 @@
+# EOL policy: store LF in repo; checkout .bat as CRLF (Windows batch compatibility).
+# Project convention: .ps1 (UTF-8 BOM), .sh, .md, .yml, .sql, .ini all use LF.
+* text=auto eol=lf
+*.bat text eol=crlf

@@ -1,0 +1,152 @@
+# ==============================================================================
+# WVP-PRO 3.0.0 多容器编排 - Host 网络模式（Linux 生产环境推荐）
+# ------------------------------------------------------------------------------
+# 适用：Linux 服务器（host 网络模式在 Windows / macOS 上不可用）
+# 特点：
+#   - zlm / wvp 使用 host 网络：SIP 与 RTP 收流无 NAT 问题，无需端口映射
+#   - mysql / redis 保持 bridge 网络，端口仅绑定 127.0.0.1，仅供本机访问
+#   - 默认开启多端口收流模式（30000-30500），兼容性更好
+# 使用：
+#   docker compose -f docker-compose.host.yml up -d --build
+#   docker compose -f docker-compose.host.yml logs -f wvp
+#   docker compose -f docker-compose.host.yml down
+# 注意：
+#   1. 本文件与 docker-compose.yml 二选一使用，共用同一份 .env
+#   2. 请自行确保防火墙放行：18080/tcp、5060 tcp+udp、9092/tcp、554/tcp、
+#      1935/tcp、10000 tcp+udp、30000-30500 tcp+udp（多端口模式）、
+#      8000 tcp+udp、9000/udp
+#   3. 请确保宿主机 18080/5060/9092/554/1935/10000/8000/9000 端口未被占用
+# ==============================================================================
+name: wvp-pro-host
+
+services:
+  # ------------------------------ MySQL 8 ------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: wvp-mysql
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    command:
+      - --innodb-buffer-pool-size=80M
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+8:00
+      - --lower-case-table-names=1
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      # 仅绑定本机回环：供 host 网络下的 wvp 通过 127.0.0.1 访问
+      - "127.0.0.1:3306:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+    networks:
+      - wvp-net
+
+  # ------------------------------ Redis 7 ------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: wvp-redis
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      REDIS_PWD: ${REDIS_PWD}
+    command: ["redis-server", "--requirepass", "${REDIS_PWD}", "--appendonly", "yes"]
+    volumes:
+      - ./data/redis:/data
+    ports:
+      # 仅绑定本机回环：供 host 网络下的 wvp 通过 127.0.0.1 访问
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PWD\" ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+    networks:
+      - wvp-net
+
+  # ------------------------------ ZLMediaKit（host 网络） ------------------------------
+  zlm:
+    image: zlmediakit/zlmediakit:master
+    container_name: wvp-zlm
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      TZ: Asia/Shanghai
+    command: ["MediaServer", "-c", "/conf/config.ini", "-l", "0"]
+    volumes:
+      # host 模式专用配置：hook 指向 http://127.0.0.1:18080
+      - ./config/zlm-config.host.ini:/conf/config.ini:ro
+      - ./data/record:/opt/media/bin/www/record
+      - ./logs/zlm:/opt/media/log
+
+  # ------------------------------ WVP-PRO（host 网络） ------------------------------
+  wvp:
+    build:
+      context: .
+      dockerfile: wvp-image/Dockerfile
+      args:
+        WVP_GIT_URL: ${WVP_GIT_URL}
+        WVP_GIT_REF: ${WVP_GIT_REF}
+    image: ${WVP_IMAGE:-wvp-pro:3.0.0}
+    container_name: wvp-server
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      zlm:
+        condition: service_started
+    environment:
+      TZ: Asia/Shanghai
+      RUN_ENV: docker
+      # ---- 浏览器播流 / 设备收流地址（来自 .env，必须为宿主机真实 IP）----
+      Stream_IP: ${Stream_IP}
+      SDP_IP: ${SDP_IP}
+      SIP_ShowIP: ${SIP_ShowIP}
+      # ---- SIP 国标参数 ----
+      SIP_Port: "5060"
+      SIP_Domain: ${SIP_Domain}
+      SIP_Id: ${SIP_Id}
+      SIP_Password: ${SIP_Password}
+      # ---- ZLM 互通（host 网络下与本机同栈，使用 127.0.0.1）----
+      ZLM_HOST: 127.0.0.1
+      ZLM_HOOK_HOST: 127.0.0.1
+      ZLM_SERCERT: ${ZLM_SERCERT}
+      ZLM_MEDIA_ID: zlmediakit-01
+      MediaHttp: "9092"
+      MediaRtsp: "554"
+      MediaRtmp: "1935"
+      MediaRtp: "10000"
+      # host 模式推荐多端口收流（需放行 30000-30500 防火墙）
+      RTP_ENABLE: "true"
+      RTP_PORT_RANGE: "30000,30500"
+      # ---- Redis（bridge 映射到本机回环）----
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+      REDIS_DB: "1"
+      REDIS_PWD: ${REDIS_PWD}
+      # ---- MySQL（bridge 映射到本机回环）----
+      DATABASE_HOST: 127.0.0.1
+      DATABASE_PORT: "3306"
+      DATABASE_NAME: ${MYSQL_DATABASE}
+      DATABASE_USER: ${MYSQL_USER}
+      DATABASE_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - ./logs/wvp:/opt/wvp/logs
+
+networks:
+  wvp-net:
+    driver: bridge

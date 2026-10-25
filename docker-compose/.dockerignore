@@ -1,0 +1,6 @@
+# wvp 镜像构建上下文排除项（构建上下文为本目录）
+data
+logs
+.env
+README.md
+docker-compose.host.yml

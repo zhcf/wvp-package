@@ -1,0 +1,153 @@
+# ==============================================================================
+# WVP-PRO 3.0.0 配置文件（Docker 部署专用）
+# ------------------------------------------------------------------------------
+# 说明：
+#   1. 本文件通过  --spring.config.location=/opt/wvp/config/application.yml
+#      全量替换加载，不会加载 jar 内的 application.yml 与 profile 文件；
+#   2. 所有 ${VAR:default} 均取自容器环境变量（由 docker-compose 注入）；
+#   3. 修改后重启 wvp 容器生效：docker compose restart wvp
+#   4. 端口方案（容器内外一致）：
+#      WVP 18080 | SIP 5060(tcp/udp) | ZLM HTTP 9092 | RTSP 554 | RTMP 1935
+#      RTP 10000(tcp/udp，单端口模式) | RTC 8000(udp/tcp) | SRT 9000(udp)
+# ==============================================================================
+
+spring:
+  # JDK21 虚拟线程
+  threads:
+    virtual:
+      enabled: true
+  cache:
+    type: redis
+  thymeleaf:
+    cache: false
+  # 接口异步请求超时
+  mvc:
+    async:
+      request-timeout: 20000
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+  # 静态资源：classpath（jar 内置前端）+ /opt/wvp/static（外部兜底）
+  web:
+    resources:
+      static-locations: classpath:/static/,classpath:/public/,classpath:/META-INF/resources/,file:/opt/wvp/static/
+  data:
+    redis:
+      # Redis 地址（容器网络内使用服务名 redis）
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      # 使用的 DB
+      database: ${REDIS_DB:1}
+      # 访问密码（无密码留空）
+      password: ${REDIS_PWD:}
+      timeout: 10000
+  # JDBC 数据库（容器网络内使用服务名 mysql）
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DATABASE_HOST:mysql}:${DATABASE_PORT:3306}/${DATABASE_NAME:wvp}?useUnicode=true&characterEncoding=UTF8&rewriteBatchedStatements=true&serverTimezone=PRC&useSSL=false&allowMultiQueries=true&allowPublicKeyRetrieval=true
+    username: ${DATABASE_USER:wvp}
+    password: ${DATABASE_PASSWORD:wvp_123456}
+
+# 网页与接口调用端口
+server:
+  port: ${WVP_PORT:18080}
+  ssl:
+    enabled: false
+
+# ------------------------------ 国标 28181 服务器配置 ------------------------------
+sip:
+  # 监听地址，保持 0.0.0.0 即可（勿填 127.0.0.1）
+  ip: 0.0.0.0
+  # 前端展示用的 SIP 服务器地址
+  show-ip: ${SIP_ShowIP}
+  # SIP 监听端口（与 compose 映射的 5060 一致）
+  port: ${SIP_Port:5060}
+  # 国标域编码（10 位）
+  domain: ${SIP_Domain:3402000000}
+  # SIP 服务器编码（20 位）
+  id: ${SIP_Id:34020000002000000001}
+  # 设备默认认证密码（留空则不校验）
+  password: ${SIP_Password:12345678}
+  # 级联注册失败重试间隔（秒）
+  register-time-interval: 60
+  # 云台控制速度
+  ptz-speed: 50
+  # 是否入库告警信息
+  alarm: true
+  # 信令发送等待回复超时（毫秒）
+  timeout: 1000
+
+# ------------------------------ ZLMediaKit 媒体服务器配置 ------------------------------
+media:
+  # 媒体服务器 ID：必须与 config/zlm-config.ini 中 mediaServerId 一致
+  id: ${ZLM_MEDIA_ID:zlmediakit-01}
+  # ZLM 内网地址（容器网络内使用服务名 zlm）
+  ip: ${ZLM_HOST:zlm}
+  # ZLM HTTP 端口：浏览器播流/下载 URL 使用的端口
+  http-port: ${MediaHttp:9092}
+  # 返回流地址时的 IP（浏览器可访问的宿主机 IP）
+  stream-ip: ${Stream_IP}
+  # WVP 在国标信令中使用的 IP（摄像机可访问到的宿主机 IP）
+  sdp-ip: ${SDP_IP}
+  # ZLM 访问 WVP 所使用的地址（容器网络内使用服务名 wvp）
+  hook-ip: ${ZLM_HOOK_HOST:wvp}
+  # HTTPS 相关端口（关闭）
+  http-ssl-port: 0
+  flv-port: ${MediaHttp:9092}
+  flv-ssl-port: 0
+  ws-flv-port: ${MediaHttp:9092}
+  ws-flv-ssl-port: 0
+  # RTP 收流端口（单端口模式）：必须与 zlm-config.ini [rtp_proxy] port 一致
+  rtp-proxy-port: ${MediaRtp:10000}
+  rtmp-port: ${MediaRtmp:1935}
+  rtmp-ssl-port: 0
+  rtsp-port: ${MediaRtsp:554}
+  rtsp-ssl-port: 0
+  # 自动配置 ZLM（同步 hook 等配置），保持开启
+  auto-config: true
+  # ZLM API 密钥：必须与 zlm-config.ini [api] secret 一致
+  secret: ${ZLM_SERCERT:wvppro-zlm-3.0.0-9f3a7c2e5b1d4068a1c9}
+  # 多端口收流模式：默认关闭（单端口用 SSRC 区分流，无需开放大端口段）
+  rtp:
+    enable: ${RTP_ENABLE:false}
+    # 多端口范围（RTP_ENABLE=true 时生效，需同步开放 compose 端口映射）
+    port-range: ${RTP_PORT_RANGE:30000,30500}
+    # 发送流（对讲/广播）本地端口范围
+    send-port-range: ${RTP_SEND_PORT_RANGE:50502,50506}
+  # 录像保存目录（ZLM 容器内路径）
+  record-path: /opt/media/bin/www/record/
+  # 录像保留天数
+  record-day: 7
+  # 按需转推辅助端口（0=关闭）
+  record-assist-port: 0
+
+# ------------------------------ 业务参数 ------------------------------
+user-settings:
+  # 点播自动应用播放
+  auto-apply-play: true
+  # 无人观看点播超时（毫秒）
+  play-timeout: 30000
+  # 等待关键帧
+  wait-track: false
+  # 录像时是否转推直播
+  record-push-live: ${RecordPushLive:false}
+  # 是否录制 SIP 信令
+  record-sip: ${RecordSip:false}
+  # 按需拉流
+  stream-on-demand: true
+  # 接口鉴权（关闭需谨慎）
+  interface-authentication: true
+  # 级联推流方式
+  broadcast-for-platform: TCP-PASSIVE
+  # 收到 ACK 后再推流
+  push-stream-after-ack: true
+  # 国标 ID 丢失时推送到平台
+  send-to-platforms-when-id-lost: true
+  # 推流鉴权
+  push-authority: true
+  jwkFile: classpath:xxxxxxxxxxx.json
+
+logging:
+  config: classpath:logback-spring.xml

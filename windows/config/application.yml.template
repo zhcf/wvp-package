@@ -1,0 +1,137 @@
+# ==============================================================================
+# WVP-PRO 3.0.0 配置文件【模板】（Windows 原生运行专用）
+# ------------------------------------------------------------------------------
+# 说明：
+#   1. 本文件是「模板」，由 windows\start.ps1 启动时替换 @XX@ 占位符后生成：
+#        runtime\config\application.yml
+#      请勿直接修改本文件用于运行；需要长期调参请修改运行目录下生成的配置。
+#   2. 字节编码：UTF-8 无 BOM（请勿用记事本另存为 ANSI/BOM，否则 YAML 解析报错）。
+#   3. Windows 本机部署：MySQL/Redis/ZLM 均在本机 127.0.0.1。
+#   4. 端口方案：WVP 18080 | SIP 5060 | ZLM HTTP 9092 | RTSP 554 | RTMP 1935
+#      RTP 10000(单端口) | RTC 8000
+# ==============================================================================
+
+spring:
+  # JDK21 虚拟线程
+  threads:
+    virtual:
+      enabled: true
+  cache:
+    type: redis
+  thymeleaf:
+    cache: false
+  # 接口异步请求超时
+  mvc:
+    async:
+      request-timeout: 20000
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+  # 静态资源：前端页面已内置于 jar（classpath:/static/）
+  web:
+    resources:
+      static-locations: classpath:/static/,classpath:/public/,classpath:/META-INF/resources/
+  data:
+    redis:
+      host: 127.0.0.1
+      port: @REDIS_PORT@
+      database: @REDIS_DB@
+      password: @REDIS_PWD@
+      timeout: 10000
+  # JDBC 数据库
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:@MYSQL_PORT@/@MYSQL_DB@?useUnicode=true&characterEncoding=UTF8&rewriteBatchedStatements=true&serverTimezone=PRC&useSSL=false&allowMultiQueries=true&allowPublicKeyRetrieval=true
+    username: @MYSQL_USER@
+    password: @MYSQL_PASSWORD@
+
+# 网页与接口调用端口
+server:
+  port: @WVP_PORT@
+  ssl:
+    enabled: false
+
+# ------------------------------ 国标 28181 服务器配置 ------------------------------
+sip:
+  # 监听地址，保持 0.0.0.0 即可（勿填 127.0.0.1）
+  ip: 0.0.0.0
+  # 前端展示用的 SIP 服务器地址（start.ps1 -StreamIp）
+  show-ip: @SIP_SHOW_IP@
+  # SIP 监听端口
+  port: @SIP_PORT@
+  # 国标域编码（10 位）
+  domain: @SIP_DOMAIN@
+  # SIP 服务器编码（20 位）
+  id: @SIP_ID@
+  # 设备默认认证密码（留空则不校验）
+  password: @SIP_PASSWORD@
+  # 级联注册失败重试间隔（秒）
+  register-time-interval: 60
+  # 云台控制速度
+  ptz-speed: 50
+  # 是否入库告警信息
+  alarm: true
+  # 信令发送等待回复超时（毫秒）
+  timeout: 1000
+
+# ------------------------------ ZLMediaKit 媒体服务器配置 ------------------------------
+media:
+  # 媒体服务器 ID：与 zlm-config.ini 模板中 mediaServerId 一致
+  id: @MEDIA_ID@
+  # ZLM 地址（本机）
+  ip: 127.0.0.1
+  # ZLM HTTP 端口：浏览器播流/下载 URL 使用的端口
+  http-port: @ZLM_HTTP_PORT@
+  # 返回流地址时的 IP（浏览器可访问的本机 IP，start.ps1 -StreamIp）
+  stream-ip: @STREAM_IP@
+  # WVP 在国标信令中使用的 IP（摄像机可访问到的本机 IP，同 StreamIp）
+  sdp-ip: @SDP_IP@
+  # ZLM 访问 WVP 所使用的地址（本机）
+  hook-ip: 127.0.0.1
+  # HTTPS 相关端口（关闭）
+  http-ssl-port: 0
+  flv-port: @ZLM_HTTP_PORT@
+  flv-ssl-port: 0
+  ws-flv-port: @ZLM_HTTP_PORT@
+  ws-flv-ssl-port: 0
+  # RTP 收流端口（单端口模式）：与 zlm-config.ini [rtp_proxy] port 一致
+  rtp-proxy-port: 10000
+  rtmp-port: 1935
+  rtmp-ssl-port: 0
+  rtsp-port: 554
+  rtsp-ssl-port: 0
+  # 自动配置 ZLM（同步 hook 等配置），保持开启
+  auto-config: true
+  # ZLM API 密钥：与 zlm-config.ini [api] secret 一致
+  secret: @ZLM_SECRET@
+  # 多端口收流模式：默认关闭（单端口用 SSRC 区分流）
+  rtp:
+    enable: false
+    port-range: 30000,30500
+    send-port-range: 50502,50506
+  # 录像保存目录（ZLM 运行目录）
+  record-path: @RECORD_PATH@
+  # 录像保留天数
+  record-day: 7
+  # 按需转推辅助端口（0=关闭）
+  record-assist-port: 0
+
+# ------------------------------ 业务参数 ------------------------------
+user-settings:
+  auto-apply-play: true
+  play-timeout: 30000
+  wait-track: false
+  record-push-live: false
+  record-sip: false
+  stream-on-demand: true
+  interface-authentication: true
+  broadcast-for-platform: TCP-PASSIVE
+  push-stream-after-ack: true
+  send-to-platforms-when-id-lost: true
+  push-authority: true
+  jwkFile: classpath:xxxxxxxxxxx.json
+
+logging:
+  config: classpath:logback-spring.xml

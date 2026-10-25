@@ -1,0 +1,15 @@
+# ===== 运行时数据与构建产物（不入库）=====
+# Windows 原生方案：运行时组件/数据/日志（created by start.ps1）
+windows/runtime/
+# docker-compose 方案：容器数据目录（volumes 挂载点）
+docker-compose/data/
+# 离线包：组件缓存 / 打包暂存 / 产物
+offline/cache/
+offline/build/
+offline/dist/
+
+# ===== 系统杂项 =====
+*.log
+Thumbs.db
+desktop.ini
+.DS_Store
