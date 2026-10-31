@@ -1,6 +1,7 @@
-# WVP-PRO 3.0.0 · docker-compose 多容器部署
+# WVP-PRO 3.0.0 · Linux 在线版（docker-compose 多容器）
 
-> 一键部署 WVP-PRO 国标 GB28181 视频平台：**Web 界面 + 后端 + ZLMediaKit + MySQL + Redis** 全部容器化。
+> 一键部署 WVP-PRO 国标 GB28181 视频平台：**Web 界面 + 后端 + ZLMediaKit + MySQL + Redis** 全部容器化，
+> 目标机联网现场构建/拉取镜像。离线环境请用 [`../offline/`](../offline/README.md)（镜像 tar 内置包内）。
 > 官方文档：https://doc.wvp-pro.cn/#/ 　源码：https://github.com/648540858/wvp-GB28181-pro
 
 ---
@@ -17,7 +18,7 @@
 特点：
 
 - **前端已内置**：构建镜像时自动编译 Vue 前端并打入 jar，访问 `http://IP:18080` 即有完整页面，无需单独部署 nginx。
-- **端口容器内外一致**（18080/5060/9092/554/1935/10000...），配置文件与说明中端口号统一，不易混淆。
+- **端口容器内外一致**（18080/5060/9092/554/1935/20000...），配置文件与说明中端口号统一，不易混淆。
 - 提供两套编排文件，二选一：
   - `docker-compose.yml`：**bridge 网络**，全平台通用（含 Windows/macOS Docker Desktop）。
   - `docker-compose.host.yml`：**host 网络**，仅 Linux，SIP/RTP 无 NAT 困扰，生产推荐。
@@ -25,7 +26,7 @@
 ## 2. 目录结构
 
 ```
-docker-compose/
+linux/online/
 ├── .env                          # 环境变量（部署前必须修改）
 ├── docker-compose.yml            # 方案一：bridge 网络（通用）
 ├── docker-compose.host.yml       # 方案二：host 网络（Linux 生产）
@@ -130,12 +131,12 @@ curl "http://127.0.0.1:9092/index/api/getServerConfig?secret=wvppro-zlm-3.0.0-9f
 | 9092 | tcp | ZLM HTTP | 播流（http-flv/ws-flv）与 API |
 | 554 | tcp | RTSP | 播流/收流 |
 | 1935 | tcp | RTMP | 收流 |
-| 10000 | tcp+udp | RTP | 单端口收流模式（默认，SSRC 区分流） |
+| 20000 | tcp+udp | RTP | 单端口收流模式（默认，SSRC 区分流） |
 | 30000-30500 | tcp+udp | RTP | 多端口收流模式（`RTP_ENABLE=true` 时需放开；host 方案默认开启） |
 | 8000 | udp+tcp | WebRTC | ZLM WebRTC 收流 |
 | 9000 | udp | SRT | 默认关闭，可不通 |
 
-> 云服务器需在安全组/防火墙放行以上端口（udp 的 5060、10000 不可遗漏）。
+> 云服务器需在安全组/防火墙放行以上端口（udp 的 5060、20000 不可遗漏）。
 
 ## 6. 环境变量表（.env）
 
@@ -189,7 +190,7 @@ docker compose up -d --build          # 重新构建并启动（更新版本/改
   - 端口、SIP、媒体、录像等全部可调；环境变量优先级见文件内注释。
 - **ZLM**：编辑 `config/zlm-config.ini`（bridge）或 `config/zlm-config.host.ini`（host）后 `docker compose restart zlm`。
   - 如修改 `[api] secret`，必须同步修改 `.env` 的 `ZLM_SERCERT`。
-- **媒体/收流模式**：默认单端口（10000）；改为多端口：`.env`/compose 中 `RTP_ENABLE: "true"`，并开放 30000-30500 端口段，重启 wvp。
+- **媒体/收流模式**：默认单端口（20000）；改为多端口：`.env`/compose 中 `RTP_ENABLE: "true"`，并开放 30000-30500 端口段，重启 wvp。
 
 ## 10. 升级 WVP
 
@@ -213,7 +214,7 @@ docker compose up -d --build
 `docker compose logs wvp` 查看是否启动完成；确认 18080 已放行；强刷浏览器缓存（Ctrl+F5）。
 
 **Q3：设备注册成功，但预览黑屏/播放失败？**
-绝大多数是 `Stream_IP`/`SDP_IP` 未改成宿主机真实 IP，或防火墙未放行 10000/udp（及多端口 30000-30500）。修改 `.env` 后 `docker compose up -d` 重建 wvp。
+绝大多数是 `Stream_IP`/`SDP_IP` 未改成宿主机真实 IP，或防火墙未放行 20000/udp（及多端口 30000-30500）。修改 `.env` 后 `docker compose up -d` 重建 wvp。
 
 **Q4：ZLM 与 WVP 断连（媒体节点离线）？**
 检查 `config/zlm-config.ini` 的 `[api] secret` 与 `.env` 的 `ZLM_SERCERT` 是否一致；一致后重启两个容器。

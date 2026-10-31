@@ -1,13 +1,16 @@
 # ===== 运行时数据与构建产物（不入库）=====
-# Windows 原生方案：运行时组件/数据/日志（created by start.ps1）
+# Windows 原生方案：运行时组件/数据/日志（start.ps1 生成）
 windows/runtime/
-# docker-compose 方案：容器数据目录（volumes 挂载点）
-docker-compose/data/
-# 离线包：组件缓存 / 打包暂存 / 产物
-offline/cache/
-offline/build/
-offline/dist/
-
+# Windows 离线版：组件缓存 / 打包暂存 / 产物
+windows/cache/
+windows/build/
+windows/dist/
+# Linux 在线版：容器数据目录（volumes 挂载点）与日志
+linux/online/data/
+linux/online/logs/
+# Linux 离线版：打包暂存 / 产物
+linux/offline/build/
+linux/offline/dist/
 # ===== 系统杂项 =====
 *.log
 Thumbs.db

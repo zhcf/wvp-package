@@ -1,11 +1,12 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-  WVP-PRO 3.0.0 · Windows 离线包制作（在可联网的 Windows 机器上运行）
+  WVP-PRO 3.0.0 · Windows 离线版制作（在可联网的 Windows 机器上运行）
 .DESCRIPTION
-  打包含四个离线组件（JRE21 / MySQL8 / Redis / ZLMediaKit）的完整离线安装包：
+  Windows 方案只交付离线包：把四个组件（JRE21 / MySQL8 / Redis / ZLMediaKit）
+  与本目录的入口脚本 / 配置模板 / 初始化 SQL 组装为完整离线安装包：
 
-      offline\dist\wvp-windows-offline-<版本>.zip
+      windows\dist\wvp-windows-offline-<版本>.zip
 
   解压后在【无网络】的 Windows 机器上按三段式使用：
     install.bat  双击 → 组件就位 + 生成配置 + 初始化数据库（装完即退，不启服务）
@@ -13,24 +14,22 @@
     stop.bat     双击 → 停止全部服务
 
   说明：
-    · 打包时自动从仓库 windows\ 同步 start.ps1 / stop.ps1 副本到 offline\windows\，
-      保证包内脚本与仓库方案始终一致。
-    · ZLMediaKit 获取顺序：-ZlmDir 参数 → windows\runtime\zlm → 下载社区编译版
-      （Gitee 免登录直链，约 4MB 单文件）并缓存到 offline\cache\zlm\MediaServer.exe。
-    · 组件缓存于 offline\cache\，重复运行不会重复下载；-SkipDownload 时仅用缓存。
+    · ZLMediaKit 获取顺序：-ZlmDir 参数 → runtime\zlm → 下载社区编译版
+      （Gitee 免登录直链，约 4MB 单文件）并缓存到 cache\zlm\MediaServer.exe。
+    · 组件缓存于本目录 cache\，重复运行不会重复下载；-SkipDownload 时仅用缓存。
 .PARAMETER WvpJar
-  wvp.jar 路径（可选）。缺省时依次尝试 windows\runtime\wvp\wvp.jar 与离线缓存
-  offline\cache\wvp\wvp.jar；两处都没有则包内不含 jar。
-  获取方式见 windows/README.md §3.2：构建机 docker compose build wvp 后，提取容器内 /opt/wvp/wvp.jar
+  wvp.jar 路径（可选）。缺省时依次尝试 runtime\wvp\wvp.jar 与离线缓存
+  cache\wvp\wvp.jar；两处都没有则包内不含 jar。
+  获取方式见 README.md §3.2：构建机 docker compose build wvp 后，提取容器内 /opt/wvp/wvp.jar
 .PARAMETER ZlmDir
   ZLMediaKit Windows 运行目录（含 MediaServer.exe 与全部 dll）。
   未提供时自动下载社区编译版单文件（V2024.9.14，静态编译无 dll 依赖）
 .PARAMETER OutDir
-  产物输出目录（默认 offline\dist）
+  产物输出目录（默认 windows\dist）
 .PARAMETER Version
   版本号（默认 3.0.0，仅影响包名与包内说明）
 .PARAMETER SkipDownload
-  不联网下载：组件需已手动放入 offline\cache\（jre21.zip / mysql.zip / redis.zip / zlm\MediaServer.exe）
+  不联网下载：组件需已手动放入 cache\（jre21.zip / mysql.zip / redis.zip / zlm\MediaServer.exe）
 .EXAMPLE
   .\pack.ps1 -WvpJar D:\wvp\wvp-pro-3.0.0.jar
 .EXAMPLE
@@ -49,13 +48,11 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference    = 'SilentlyContinue'
 
 # ========================= 基础路径 =========================
-$Base    = $PSScriptRoot                        # offline\windows\
-$Offline = Split-Path $Base -Parent             # offline\
-$Repo    = Split-Path $Offline -Parent          # 仓库根
-$WinSrc  = Join-Path $Repo 'windows'            # windows 方案源目录（副本同步来源）
-$Cache   = Join-Path $Offline 'cache'           # 组件缓存
-$Build   = Join-Path $Offline 'build'           # 打包暂存
-if (-not $OutDir) { $OutDir = Join-Path $Offline 'dist' }
+$Base  = $PSScriptRoot                          # windows\（方案与入口脚本所在目录）
+$Repo  = Split-Path $Base -Parent               # 仓库根
+$Cache = Join-Path $Base 'cache'                # 组件缓存
+$Build = Join-Path $Base 'build'                # 打包暂存
+if (-not $OutDir) { $OutDir = Join-Path $Base 'dist' }
 $PkgName = "wvp-windows-offline-$Version"
 $Stage   = Join-Path $Build $PkgName
 $ZipPath = Join-Path $OutDir "$PkgName.zip"
@@ -135,26 +132,23 @@ function Write-Bat {
     [IO.File]::WriteAllText($Path, ($lines -join "`r`n") + "`r`n", [Text.Encoding]::ASCII)
 }
 
-# ========================= 0. 同步方案脚本副本 =========================
+# ========================= 0. 横幅 =========================
 Write-Host ''
 Write-Host '========== WVP-PRO Windows 离线包制作 ==========' -ForegroundColor Green
 Write-Step "仓库根：$Repo"
-foreach ($f in @('start.ps1', 'stop.ps1')) {
-    Copy-Item (Join-Path $WinSrc $f) (Join-Path $Base $f) -Force
-}
-Write-Step '已从 windows\ 同步 start.ps1 / stop.ps1 副本到 offline\windows\'
 
 # ========================= 1. 来源文件检查 =========================
 $required = @(
     'start.ps1',
     'stop.ps1',
-    'install.ps1'
+    'install.ps1',
+    'README.md',
+    'config\application.yml.template',
+    'config\zlm-config.ini.template',
+    'mysql\init\wvp-init-3.0.0.sql'
 )
 foreach ($r in $required) {
-    if (-not (Test-Path (Join-Path $Base $r))) { Fail "缺少 offline\windows\ 文件：$r（请确认仓库目录完整）" }
-}
-foreach ($r in @('README.md', 'config\application.yml.template', 'config\zlm-config.ini.template', 'mysql\init\wvp-init-3.0.0.sql')) {
-    if (-not (Test-Path (Join-Path $WinSrc $r))) { Fail "缺少 windows 方案文件：$WinSrc\$r（请确认仓库目录完整）" }
+    if (-not (Test-Path (Join-Path $Base $r))) { Fail "缺少 windows\ 文件：$r（请确认仓库目录完整）" }
 }
 Write-Step '来源文件检查通过'
 
@@ -164,14 +158,14 @@ $jreZip   = Get-Component @($JreUrl) 'jre21.zip' 'Temurin JRE 21 Windows x64（�
 $mysqlZip = Get-Component $MysqlUrlCandidates 'mysql.zip' 'MySQL 8 winx64 zip（约 200MB）'
 $redisZip = Get-Component @($RedisUrl) 'redis.zip' 'Redis for Windows 5.0.14.1（约 12MB）'
 
-# ZLM：优先 -ZlmDir 参数，其次仓库内 windows\runtime\zlm，最后自动下载社区编译版单文件
+# ZLM：优先 -ZlmDir 参数，其次本目录 runtime\zlm，最后自动下载社区编译版单文件
 $zlmDirSource = $null
 if ($ZlmDir) {
     if (-not (Test-Path (Join-Path $ZlmDir 'MediaServer.exe'))) { Fail "指定的 ZLM 目录中未找到 MediaServer.exe：$ZlmDir" }
     $zlmDirSource = $ZlmDir
 }
-elseif (Test-Path (Join-Path $WinSrc 'runtime\zlm\MediaServer.exe')) {
-    $zlmDirSource = Join-Path $WinSrc 'runtime\zlm'
+elseif (Test-Path (Join-Path $Base 'runtime\zlm\MediaServer.exe')) {
+    $zlmDirSource = Join-Path $Base 'runtime\zlm'
 }
 $zlmExe = $null
 if (-not $zlmDirSource) {
@@ -179,31 +173,31 @@ if (-not $zlmDirSource) {
 }
 
 # ========================= 3. wvp.jar（可选，尽力打包） =========================
-# 来源优先级：-WvpJar 参数 → windows\runtime\wvp\wvp.jar → offline\cache\wvp\wvp.jar
+# 来源优先级：-WvpJar 参数 → runtime\wvp\wvp.jar → cache\wvp\wvp.jar
 $jarSource = $null
 if ($WvpJar) {
     if (-not (Test-Path $WvpJar)) { Fail "指定的 jar 不存在：$WvpJar" }
     $jarSource = $WvpJar
 }
-elseif (Test-Path (Join-Path $WinSrc 'runtime\wvp\wvp.jar')) {
-    $jarSource = Join-Path $WinSrc 'runtime\wvp\wvp.jar'
+elseif (Test-Path (Join-Path $Base 'runtime\wvp\wvp.jar')) {
+    $jarSource = Join-Path $Base 'runtime\wvp\wvp.jar'
 }
 elseif (Test-Path (Join-Path $Cache 'wvp\wvp.jar')) {
     $jarSource = Join-Path $Cache 'wvp\wvp.jar'
 }
-# 来源非缓存时自动同步一份到 offline\cache\wvp\，后续打包直接复用
+# 来源非缓存时自动同步一份到 cache\wvp\，后续打包直接复用
 if ($jarSource) {
     $jarCache = Join-Path $Cache 'wvp\wvp.jar'
     if ([IO.Path]::GetFullPath($jarSource) -ne [IO.Path]::GetFullPath($jarCache)) {
         New-Item -ItemType Directory -Force -Path (Split-Path $jarCache -Parent) | Out-Null
         Copy-Item $jarSource $jarCache -Force
-        Write-Step 'wvp.jar 已缓存到 offline\cache\wvp\（后续打包自动复用）'
+        Write-Step 'wvp.jar 已缓存到 cache\wvp\（后续打包自动复用）'
     }
 }
 if (-not $jarSource) {
     Write-Warn '未提供 wvp.jar（-WvpJar）：包内将不含 runtime\wvp\wvp.jar，离线机器首次启动前需按包内说明放入'
-    Write-Warn '  获取途径：在联网构建机 docker compose build wvp 后提取容器内 /opt/wvp/wvp.jar（见 windows\README.md §3.2），'
-    Write-Warn '  放入 offline\cache\wvp\wvp.jar 后重新运行本脚本即自动打包'
+    Write-Warn '  获取途径：在联网构建机 docker compose build wvp 后提取容器内 /opt/wvp/wvp.jar（见 README.md §3.2），'
+    Write-Warn '  放入 cache\wvp\wvp.jar 后重新运行本脚本即自动打包'
 }
 
 # ========================= 4. 组装包目录 =========================
@@ -216,9 +210,9 @@ New-Item -ItemType Directory -Force -Path (Join-Path $Stage 'runtime\_download')
 foreach ($f in @('install.ps1', 'start.ps1', 'stop.ps1')) {
     Copy-Item (Join-Path $Base $f) $Stage
 }
-Copy-Item (Join-Path $WinSrc 'README.md') $Stage
-Copy-Tree (Join-Path $WinSrc 'config') $Stage\config
-Copy-Tree (Join-Path $WinSrc 'mysql')  $Stage\mysql
+Copy-Item (Join-Path $Base 'README.md') $Stage
+Copy-Tree (Join-Path $Base 'config') $Stage\config
+Copy-Tree (Join-Path $Base 'mysql')  $Stage\mysql
 
 # 4.2 组件 zip → runtime\_download\（start.ps1 -SkipDownload 直接使用）
 Copy-Item $jreZip   $Stage\runtime\_download
@@ -272,13 +266,13 @@ WVP-PRO $Version · Windows 离线包（绿色版：解压即用，全程无需�
   · runtime\_download\  已内置 JRE21 / MySQL8 / Redis 离线压缩包（安装时免下载解压）
   · runtime\zlm\        ZLMediaKit（社区编译版 V2024.9.14 单文件 MediaServer.exe）
   · runtime\wvp\        WVP-PRO jar
-  · 其余文件与联网版一致，详见包内 README.md
+  · 包内 README.md 为完整使用说明（安装 / 参数 / 端口 / 常见问题）
 
 四、常见问题
   · 端口 3306/6379/18080/9092 被占用会导致启动失败（报错信息会指明端口）
   · 双击 bat 已内置 -ExecutionPolicy Bypass，无需手工改 PowerShell 策略
   · ZLM 为社区编译版单文件；如需完整目录（含 dll/静态资源）可自行编译后替换 runtime\zlm\
-  · 详细文档：包内 README.md 与仓库 windows\README.md
+  · 详细文档：包内 README.md（含参数、端口、FAQ）
 ====================================================================
 "@
 [IO.File]::WriteAllText((Join-Path $Stage '离线安装说明.txt'), $readmeTxt, [Text.UTF8Encoding]::new($true))

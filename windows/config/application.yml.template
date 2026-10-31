@@ -8,7 +8,7 @@
 #   2. 字节编码：UTF-8 无 BOM（请勿用记事本另存为 ANSI/BOM，否则 YAML 解析报错）。
 #   3. Windows 本机部署：MySQL/Redis/ZLM 均在本机 127.0.0.1。
 #   4. 端口方案：WVP 18080 | SIP 5060 | ZLM HTTP 9092 | RTSP 554 | RTMP 1935
-#      RTP 10000(单端口) | RTC 8000
+#      RTP 20000(单端口) | RTC 8000
 # ==============================================================================
 
 spring:
@@ -97,7 +97,7 @@ media:
   ws-flv-port: @ZLM_HTTP_PORT@
   ws-flv-ssl-port: 0
   # RTP 收流端口（单端口模式）：与 zlm-config.ini [rtp_proxy] port 一致
-  rtp-proxy-port: 10000
+  rtp-proxy-port: @ZLM_RTP_PORT@
   rtmp-port: 1935
   rtmp-ssl-port: 0
   rtsp-port: 554

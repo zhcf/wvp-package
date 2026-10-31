@@ -1,18 +1,23 @@
 # ==============================================================================
-# WVP-PRO 3.0.0 多容器编排（docker-compose 方案）
+# WVP-PRO 3.0.0 多容器编排 - Host 网络模式（Linux 生产环境推荐）
 # ------------------------------------------------------------------------------
-# 组件：wvp(Java+UI) + zlm(ZLMediaKit) + mysql8 + redis7
-# 端口（容器内外一致）：
-#   WVP 18080/tcp | SIP 5060 tcp+udp | ZLM HTTP 9092 | RTSP 554 | RTMP 1935
-#   RTP 10000 tcp+udp（单端口收流模式）| RTC 8000 udp+tcp | SRT 9000/udp
-# 常用命令：
-#   docker compose up -d --build     # 首次构建并启动（构建 wvp 镜像耗时较长）
-#   docker compose up -d             # 再次启动（镜像已构建）
-#   docker compose logs -f wvp       # 查看 wvp 日志
-#   docker compose down              # 停止并删除容器（数据卷保留在 ./data）
-# 使用前请先按需修改 .env（重点：Stream_IP / SDP_IP / SIP_ShowIP / 各密码）
+# 适用：Linux 服务器（host 网络模式在 Windows / macOS 上不可用）
+# 特点：
+#   - zlm / wvp 使用 host 网络：SIP 与 RTP 收流无 NAT 问题，无需端口映射
+#   - mysql / redis 保持 bridge 网络，端口仅绑定 127.0.0.1，仅供本机访问
+#   - 默认开启多端口收流模式（30000-30500），兼容性更好
+# 使用：
+#   docker compose -f docker-compose.host.yml up -d --build
+#   docker compose -f docker-compose.host.yml logs -f wvp
+#   docker compose -f docker-compose.host.yml down
+# 注意：
+#   1. 本文件与 docker-compose.yml 二选一使用，共用同一份 .env
+#   2. 请自行确保防火墙放行：18080/tcp、5060 tcp+udp、9092/tcp、554/tcp、
+#      1935/tcp、20000 tcp+udp、30000-30500 tcp+udp（多端口模式）、
+#      8000 tcp+udp、9000/udp
+#   3. 请确保宿主机 18080/5060/9092/554/1935/20000/8000/9000 端口未被占用
 # ==============================================================================
-name: wvp-pro
+name: wvp-pro-host
 
 services:
   # ------------------------------ MySQL 8 ------------------------------
@@ -23,7 +28,6 @@ services:
     environment:
       TZ: Asia/Shanghai
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      # 初始化时自动建库并授权 MYSQL_USER（初始化 SQL 在此库中执行）
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
@@ -32,12 +36,13 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
       - --default-time-zone=+8:00
-      # 表名大小写不敏感（必须），首次初始化后不可更改
       - --lower-case-table-names=1
     volumes:
       - ./data/mysql:/var/lib/mysql
-      # WVP 3.0.0 初始化 SQL（仅在数据卷为空时执行一次）
       - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      # 仅绑定本机回环：供 host 网络下的 wvp 通过 127.0.0.1 访问
+      - "127.0.0.1:3306:3306"
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
       interval: 10s
@@ -58,6 +63,9 @@ services:
     command: ["redis-server", "--requirepass", "${REDIS_PWD}", "--appendonly", "yes"]
     volumes:
       - ./data/redis:/data
+    ports:
+      # 仅绑定本机回环：供 host 网络下的 wvp 通过 127.0.0.1 访问
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PWD\" ping | grep -q PONG"]
       interval: 10s
@@ -67,34 +75,22 @@ services:
     networks:
       - wvp-net
 
-  # ------------------------------ ZLMediaKit ------------------------------
-  # 官方镜像基于 ubuntu:24.04，MediaServer 工作目录 /opt/media/bin
+  # ------------------------------ ZLMediaKit（host 网络） ------------------------------
   zlm:
     image: zlmediakit/zlmediakit:master
     container_name: wvp-zlm
     restart: unless-stopped
+    network_mode: host
     environment:
       TZ: Asia/Shanghai
-    # 使用自定义配置（secret / 端口 / hook 指向 wvp）
     command: ["MediaServer", "-c", "/conf/config.ini", "-l", "0"]
     volumes:
-      - ./config/zlm-config.ini:/conf/config.ini:ro
-      # 录像文件（wvp 配置中的 record-path 指向此目录）
+      # host 模式专用配置：hook 指向 http://127.0.0.1:18080
+      - ./config/zlm-config.host.ini:/conf/config.ini:ro
       - ./data/record:/opt/media/bin/www/record
       - ./logs/zlm:/opt/media/log
-    ports:
-      - "9092:9092/tcp"    # [播流] HTTP-FLV / WS-FLV / HLS / API
-      - "554:554/tcp"      # [播流] RTSP
-      - "1935:1935/tcp"    # [收流] RTMP
-      - "10000:10000/tcp"  # [收流] RTP（单端口模式，用 SSRC 区分流）
-      - "10000:10000/udp"  # [收流] RTP
-      - "8000:8000/udp"    # [收流] WebRTC
-      - "8000:8000/tcp"    # [收流] WebRTC TCP 模式
-      - "9000:9000/udp"    # [收流] SRT（config.ini 默认关闭 SRT，可去掉本行）
-    networks:
-      - wvp-net
 
-  # ------------------------------ WVP-PRO ------------------------------
+  # ------------------------------ WVP-PRO（host 网络） ------------------------------
   wvp:
     build:
       context: .
@@ -105,6 +101,7 @@ services:
     image: ${WVP_IMAGE:-wvp-pro:3.0.0}
     container_name: wvp-server
     restart: unless-stopped
+    network_mode: host
     depends_on:
       mysql:
         condition: service_healthy
@@ -124,37 +121,31 @@ services:
       SIP_Domain: ${SIP_Domain}
       SIP_Id: ${SIP_Id}
       SIP_Password: ${SIP_Password}
-      # ---- ZLM 互通（容器网络内使用服务名）----
-      ZLM_HOST: zlm
-      ZLM_HOOK_HOST: wvp
+      # ---- ZLM 互通（host 网络下与本机同栈，使用 127.0.0.1）----
+      ZLM_HOST: 127.0.0.1
+      ZLM_HOOK_HOST: 127.0.0.1
       ZLM_SERCERT: ${ZLM_SERCERT}
       ZLM_MEDIA_ID: zlmediakit-01
       MediaHttp: "9092"
       MediaRtsp: "554"
       MediaRtmp: "1935"
-      MediaRtp: "10000"
-      # 单端口收流模式（默认）；如需多端口，改为 true 并开放 30000-30500 映射
-      RTP_ENABLE: "false"
+      MediaRtp: "20000"
+      # host 模式推荐多端口收流（需放行 30000-30500 防火墙）
+      RTP_ENABLE: "true"
       RTP_PORT_RANGE: "30000,30500"
-      # ---- Redis ----
-      REDIS_HOST: redis
+      # ---- Redis（bridge 映射到本机回环）----
+      REDIS_HOST: 127.0.0.1
       REDIS_PORT: "6379"
       REDIS_DB: "1"
       REDIS_PWD: ${REDIS_PWD}
-      # ---- MySQL ----
-      DATABASE_HOST: mysql
+      # ---- MySQL（bridge 映射到本机回环）----
+      DATABASE_HOST: 127.0.0.1
       DATABASE_PORT: "3306"
       DATABASE_NAME: ${MYSQL_DATABASE}
       DATABASE_USER: ${MYSQL_USER}
       DATABASE_PASSWORD: ${MYSQL_PASSWORD}
-    ports:
-      - "18080:18080/tcp"  # Web 页面 / 接口
-      - "5060:5060/tcp"    # SIP 信令
-      - "5060:5060/udp"    # SIP 信令
     volumes:
       - ./logs/wvp:/opt/wvp/logs
-    networks:
-      - wvp-net
 
 networks:
   wvp-net:

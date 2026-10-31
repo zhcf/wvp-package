@@ -8,7 +8,7 @@
 #   3. 修改后重启 wvp 容器生效：docker compose restart wvp
 #   4. 端口方案（容器内外一致）：
 #      WVP 18080 | SIP 5060(tcp/udp) | ZLM HTTP 9092 | RTSP 554 | RTMP 1935
-#      RTP 10000(tcp/udp，单端口模式) | RTC 8000(udp/tcp) | SRT 9000(udp)
+#      RTP 20000(tcp/udp，单端口模式) | RTC 8000(udp/tcp) | SRT 9000(udp)
 # ==============================================================================
 
 spring:
@@ -100,7 +100,7 @@ media:
   ws-flv-port: ${MediaHttp:9092}
   ws-flv-ssl-port: 0
   # RTP 收流端口（单端口模式）：必须与 zlm-config.ini [rtp_proxy] port 一致
-  rtp-proxy-port: ${MediaRtp:10000}
+  rtp-proxy-port: ${MediaRtp:20000}
   rtmp-port: ${MediaRtmp:1935}
   rtmp-ssl-port: 0
   rtsp-port: ${MediaRtsp:554}

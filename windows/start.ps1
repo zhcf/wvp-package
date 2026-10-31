@@ -58,7 +58,7 @@ $RedisPort   = 6379
 $ZlmHttpPort = 9092
 $ZlmRtspPort = 554
 $ZlmRtmpPort = 1935
-$ZlmRtpPort  = 10000
+$ZlmRtpPort  = 20000
 $ZlmRtcPort  = 8000
 
 # 平台参数
@@ -463,6 +463,7 @@ $appMap = @{
     STREAM_IP       = $StreamIp
     SDP_IP          = $StreamIp
     ZLM_HTTP_PORT   = $ZlmHttpPort
+    ZLM_RTP_PORT    = $ZlmRtpPort
     ZLM_SECRET      = $ZlmSecret
     MEDIA_ID        = $MediaId
     MYSQL_PORT      = $MysqlPort

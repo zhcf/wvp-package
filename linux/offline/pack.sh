@@ -5,8 +5,8 @@
 # 流程：
 #   1) docker compose build 构建 wvp 镜像（源码 npm+maven 多阶段构建）
 #   2) docker pull mysql:8.0 / redis:7-alpine / zlmediakit/zlmediakit:master
-#   3) docker save 四个镜像 + docker-compose 方案文件 + 三个入口脚本（install/start/stop）
-#      → 打包为：offline/dist/wvp-linux-offline-<版本>.tar.gz
+#   3) docker save 四个镜像 + 在线版编排/配置文件 + 三个入口脚本（install/start/stop）
+#      → 打包为：linux/offline/dist/wvp-linux-offline-<版本>.tar.gz
 # 用法：
 #   ./pack.sh [--version 3.0.0] [--out-dir DIR] [--skip-build] [--skip-pull]
 # ==============================================================================
@@ -30,13 +30,13 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-BASE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # offline/linux/
-OFFLINE="$(dirname "$BASE")"                            # offline/
-REPO="$(dirname "$OFFLINE")"                            # 仓库根
-COMPOSE_DIR="$REPO/docker-compose"
-BUILD="$OFFLINE/build"
+BASE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"   # linux/offline/
+LINUX="$(dirname "$BASE")"                              # linux/
+REPO="$(dirname "$LINUX")"                              # 仓库根
+COMPOSE_DIR="$LINUX/online"                             # 复用在线版的编排与配置模板
+BUILD="$BASE/build"
 STAGE="$BUILD/wvp-linux-offline-$VERSION"
-DIST="${OUT_DIR:-$OFFLINE/dist}"
+DIST="${OUT_DIR:-$BASE/dist}"
 PKG="wvp-linux-offline-$VERSION.tar.gz"
 
 MYSQL_IMG="mysql:8.0"
@@ -90,7 +90,7 @@ log "组装目录：$STAGE"
 rm -rf "$STAGE"
 mkdir -p "$STAGE/images"
 
-# 3.1 docker-compose 方案文件（保留目录结构；.env 为默认配置模板）
+# 3.1 编排与配置文件（取自 ../online，保留目录结构；.env 为默认配置模板）
 for f in .env docker-compose.yml docker-compose.host.yml README.md .dockerignore; do
   [ -f "$COMPOSE_DIR/$f" ] && cp -a "$COMPOSE_DIR/$f" "$STAGE/"
 done
@@ -139,7 +139,7 @@ WVP-PRO $VERSION · Linux 离线安装包（Docker 多容器方案）
 
 四、注意事项
   · 部署前必须把 .env 的 Stream_IP/SDP_IP/SIP_ShowIP 改成设备可访问的真实 IP
-  · 防火墙需放行 tcp+udp 的 5060 与 10000（SIP 信令与 RTP 收流）
+  · 防火墙需放行 tcp+udp 的 5060 与 20000（SIP 信令与 RTP 收流）
   · 详细文档：包内 README.md
 ====================================================================
 EOF

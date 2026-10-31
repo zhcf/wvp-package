@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WVP-PRO 3.0.0 用户手册（交付包使用指南）</title>
+<style>
+  :root {
+    --primary: #1f6feb;
+    --primary-dark: #0b4f9e;
+    --bg: #f5f7fb;
+    --card: #ffffff;
+    --text: #24292f;
+    --muted: #57606a;
+    --border: #d8dee6;
+    --ok-bg: #e8f5ec; --ok-border: #b7e0c3;
+    --warn-bg: #fff4e5; --warn-border: #f3ce93;
+    --danger-bg: #fdecec; --danger-border: #f2b8b8;
+    --code-bg: #10151c; --code-text: #e6edf3;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: system-ui, "Segoe UI", "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 15px;
+  }
+  header.hero {
+    background: linear-gradient(135deg, #0b4f9e 0%, #1f6feb 55%, #3b8bf5 100%);
+    color: #fff;
+    padding: 48px 24px 40px;
+  }
+  .hero-inner { max-width: 1080px; margin: 0 auto; }
+  .hero h1 { margin: 0 0 10px; font-size: 30px; letter-spacing: 1px; }
+  .hero p.sub { margin: 0 0 18px; opacity: .92; font-size: 15px; }
+  .badge {
+    display: inline-block;
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.35);
+    border-radius: 999px;
+    padding: 3px 14px;
+    font-size: 13px;
+    margin-right: 8px;
+  }
+  main { max-width: 1080px; margin: 0 auto; padding: 28px 24px 80px; }
+  .toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 26px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(16,24,40,.06);
+  }
+  .toc h2 { margin: 0 0 12px; font-size: 17px; }
+  .toc ol { margin: 0; padding-left: 22px; columns: 2; column-gap: 40px; }
+  .toc li { margin: 5px 0; }
+  .toc a { color: var(--primary); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  section.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 26px 30px;
+    margin-bottom: 26px;
+    box-shadow: 0 1px 3px rgba(16,24,40,.06);
+  }
+  h2.chapter {
+    margin: 0 0 18px;
+    font-size: 22px;
+    color: var(--primary-dark);
+    border-left: 5px solid var(--primary);
+    padding-left: 12px;
+    line-height: 1.3;
+  }
+  h3 { font-size: 17px; margin: 26px 0 10px; color: #123a66; }
+  h4 { font-size: 15px; margin: 18px 0 8px; }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 14px 0;
+    font-size: 14px;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #eef3fa; font-weight: 600; white-space: nowrap; }
+  tr:nth-child(even) td { background: #fafbfd; }
+  code {
+    background: #eef1f5;
+    border: 1px solid #e2e6ec;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+    font-size: 13.5px;
+    color: #0b4f9e;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 8px;
+    padding: 14px 18px;
+    overflow-x: auto;
+    line-height: 1.6;
+    font-size: 13.5px;
+    margin: 12px 0;
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+  }
+  .note, .warn, .danger, .ok {
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 14px;
+    border-left: 4px solid;
+  }
+  .note { background: #eef4fe; border-color: var(--primary); }
+  .warn { background: var(--warn-bg); border-color: #d9822b; }
+  .danger { background: var(--danger-bg); border-color: #cf222e; }
+  .ok { background: var(--ok-bg); border-color: #2da44e; }
+  .note b, .warn b, .danger b, .ok b { margin-right: 4px; }
+  .steps { counter-reset: step; list-style: none; padding-left: 0; }
+  .steps > li {
+    counter-increment: step;
+    position: relative;
+    padding: 12px 16px 12px 56px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin: 10px 0;
+    background: #fbfcfe;
+  }
+  .steps > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 16px;
+    top: 12px;
+    width: 26px;
+    height: 26px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .steps > li b.title { display: block; margin-bottom: 4px; }
+  .pkg-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+  }
+  .pkg {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    background: #fbfcfe;
+  }
+  .pkg h4 { margin: 0 0 8px; color: var(--primary-dark); font-size: 15.5px; }
+  .pkg .meta { font-size: 13px; color: var(--muted); margin: 3px 0; }
+  .pkg .meta b { color: var(--text); }
+  kbd {
+    background: #f0f2f5;
+    border: 1px solid #c9d0d8;
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 1px 7px;
+    font-size: 12.5px;
+    font-family: inherit;
+  }
+  footer {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px 50px;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+  }
+  .tag-win { color: #0b6bcb; font-weight: 600; }
+  .tag-lin { color: #b45309; font-weight: 600; }
+  @media (max-width: 720px) {
+    .toc ol { columns: 1; }
+    section.card { padding: 20px 18px; }
+    .hero h1 { font-size: 23px; }
+  }
+  @media print {
+    body { background: #fff; }
+    header.hero { background: #0b4f9e; -webkit-print-color-adjust: exact; }
+    section.card, .toc { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <h1>WVP-PRO 3.0.0 用户手册</h1>
+    <p class="sub">国标 GB/T 28181-2016 视频平台 · 交付包安装与使用指南</p>
+    <span class="badge">版本 3.0.0</span>
+    <span class="badge">Windows 离线包</span>
+    <span class="badge">Linux 离线包</span>
+    <span class="badge">Linux 在线版</span>
+  </div>
+</header>
+
+<main>
+
+<div class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#overview">交付包概览</a></li>
+    <li><a href="#windows">Windows 离线包（原生进程，免 Docker）</a></li>
+    <li><a href="#linux-offline">Linux 离线包（Docker 镜像内置）</a></li>
+    <li><a href="#linux-online">Linux 在线版（现场构建）</a></li>
+    <li><a href="#first-use">首次使用与设备接入</a></li>
+    <li><a href="#ports">端口与防火墙</a></li>
+    <li><a href="#accounts">默认账号与安全建议</a></li>
+    <li><a href="#faq">常见问题（FAQ）</a></li>
+    <li><a href="#maintenance">数据备份、升级与卸载</a></li>
+  </ol>
+</div>
+
+<!-- ============================ 概览 ============================ -->
+<section class="card" id="overview">
+  <h2 class="chapter">一、交付包概览</h2>
+  <p>本产品以三种交付包发布，功能完全一致，按目标机器的平台与网络环境选择其一即可：</p>
+
+  <div class="pkg-grid">
+    <div class="pkg">
+      <h4>① Windows 离线包</h4>
+      <div class="meta">文件：<b>wvp-windows-offline-3.0.0.zip</b>（约 410&nbsp;MB）</div>
+      <div class="meta">依赖：<b>无</b>（内置 JRE21 / MySQL8 / Redis / ZLMediaKit / WVP）</div>
+      <div class="meta">适用：Windows 10 / 11（64 位），<b>不需要 Docker</b></div>
+      <div class="meta">方式：解压后双击 <code>start.bat</code>（绿色版，删除目录即卸载）</div>
+    </div>
+    <div class="pkg">
+      <h4>② Linux 离线包</h4>
+      <div class="meta">文件：<b>wvp-linux-offline-3.0.0.tar.gz</b>（约 796&nbsp;MB，解压约 2&nbsp;GB）</div>
+      <div class="meta">依赖：目标机需预装 <b>Docker Engine 20.10+ 与 compose 插件（v2）</b></div>
+      <div class="meta">适用：无外网的 Linux x86_64 服务器（镜像已内置，无需构建/拉取）</div>
+      <div class="meta">方式：<code>install.sh</code> → <code>start.sh</code>（三步走）</div>
+    </div>
+    <div class="pkg">
+      <h4>③ Linux 在线版</h4>
+      <div class="meta">形式：<b>linux/online/</b> 源码目录（编排 + 配置模板）</div>
+      <div class="meta">依赖：Docker + <b>外网</b>（现场构建 wvp 镜像、拉取依赖镜像）</div>
+      <div class="meta">适用：可联网 Linux 服务器，首次构建约 15~40 分钟</div>
+      <div class="meta">方式：改 <code>.env</code> → <code>docker compose up -d --build</code></div>
+    </div>
+  </div>
+
+  <h3>端口与账号速查</h3>
+  <table>
+    <tr><th>项目</th><th>默认值</th></tr>
+    <tr><td>Web 访问地址</td><td><code>http://&lt;服务器IP&gt;:18080</code></td></tr>
+    <tr><td>WVP 管理员</td><td><code>admin / admin</code></td></tr>
+    <tr><td>国标设备接入</td><td>SIP 服务器 ID <code>34020000002000000001</code>；域 <code>3402000000</code>；端口 <code>5060</code>；密码 <code>12345678</code></td></tr>
+    <tr><td>RTP 收流（单端口）</td><td><code>20000</code>（tcp+udp，默认模式）</td></tr>
+    <tr><td>其他端口</td><td>18080 / 5060 / 9092 / 554 / 1935 / 8000 / 9000，详见<a href="#ports">第六章</a></td></tr>
+  </table>
+
+  <div class="note"><b>提示：</b>三种包使用同一套默认账号与端口；国标设备接入参数（SIP ID / 域 / 密码）三者也完全一致，换包不换设备配置。</div>
+</section>
+
+<!-- ============================ Windows ============================ -->
+<section class="card" id="windows">
+  <h2 class="chapter">二、Windows 离线包（原生进程，免 Docker）</h2>
+
+  <h3>2.1 运行环境要求</h3>
+  <table>
+    <tr><th>项目</th><th>要求</th></tr>
+    <tr><td>操作系统</td><td>Windows 10 / 11（64 位）</td></tr>
+    <tr><td>内存</td><td>建议 4&nbsp;GB 以上（8&nbsp;GB 可支持更多路预览）</td></tr>
+    <tr><td>磁盘</td><td>安装约 1&nbsp;GB + 数据/录像空间（按需预留）</td></tr>
+    <tr><td>其他软件</td><td><b>无需</b> Docker、Java、MySQL、Redis（全部自带）</td></tr>
+    <tr><td>端口</td><td>18080 / 5060 / 9092 / 554 / 1935 / 20000 / 8000 空闲（未被其他软件占用）</td></tr>
+  </table>
+
+  <h3>2.2 安装与启动（三步）</h3>
+  <ol class="steps">
+    <li>
+      <b class="title">解压</b>
+      将 <code>wvp-windows-offline-3.0.0.zip</code> 复制到目标机器，解压到任意目录。
+      <b>建议使用英文、无空格的路径</b>（如 <code>D:\wvp</code>）。
+    </li>
+    <li>
+      <b class="title">一键启动</b>
+      双击目录中的 <code>start.bat</code>，保持命令行窗口打开。
+      首次启动会自动完成：组件就位 → 生成配置 → 初始化数据库（约 1 分钟）→ 启动 Redis / ZLM / WVP（约 30~60 秒）。
+      窗口出现“启动完成”提示即表示就绪（<b>全程约 1~2 分钟</b>）。
+    </li>
+    <li>
+      <b class="title">浏览器访问</b>
+      打开 <code>http://&lt;本机IP&gt;:18080</code>（本机也可用 <code>http://localhost:18080</code>），
+      默认账号 <code>admin / admin</code>。
+    </li>
+  </ol>
+
+  <div class="note"><b>分步安装（可选）：</b>也可以先双击 <code>install.bat</code> 仅完成安装（不启动，便于先检查），再双击 <code>start.bat</code> 启动。</div>
+  <div class="warn"><b>多网卡 / 多 IP 的机器：</b>请显式指定对外 IP，避免把错误的网卡地址写进设备信令：
+    <pre><code>powershell -ExecutionPolicy Bypass -File .\start.ps1 -SkipDownload -StreamIp 192.168.1.105</code></pre>
+  </div>
+
+  <h3>2.3 停止与重启</h3>
+  <table>
+    <tr><th>操作</th><th>方法</th></tr>
+    <tr><td>停止全部服务</td><td>双击 <code>stop.bat</code>（依次优雅停止 WVP → ZLM → Redis → MySQL）</td></tr>
+    <tr><td>重新启动</td><td><code>stop.bat</code> 后再 <code>start.bat</code></td></tr>
+    <tr><td>强制重启</td><td><code>.\start.ps1 -SkipDownload -Force</code>（等价先执行 stop）</td></tr>
+  </table>
+
+  <h3>2.4 目录与数据</h3>
+  <pre><code>解压目录\
+├── start.bat / stop.bat / install.bat   # 双击入口
+├── README.md                            # 包内详细说明
+├── runtime\                             # 运行时（首次启动生成）
+│   ├── config\application.yml           # WVP 运行配置（调参改这里，重启生效）
+│   ├── jre21\ mysql\ redis\ zlm\ wvp\   # 各组件
+│   ├── data\                            # 数据库 / Redis 快照 / 录像（**备份此目录**）
+│   ├── logs\                            # 运行日志（排障看这里）
+│   └── run\                             # 进程 PID（stop.bat 依据）
+└── config\  mysql\                      # 配置模板与初始化 SQL</code></pre>
+  <ul>
+    <li><b>数据备份：</b>关闭服务后复制 <code>runtime\data\</code> 即可。</li>
+    <li><b>重置数据库：</b>停止服务 → 删除 <code>runtime\data\mysql\</code> → 重新启动（自动重新初始化）。</li>
+    <li><b>完全卸载：</b>停止服务后直接删除整个解压目录（无注册表、无系统服务、无开机自启）。</li>
+  </ul>
+
+  <h3>2.5 Windows 常见问题速查</h3>
+  <table>
+    <tr><th>现象</th><th>处理</th></tr>
+    <tr><td>提示“禁止运行脚本 / 无法加载 start.ps1”</td><td>bat 已内置 Bypass；手工运行时加 <code>-ExecutionPolicy Bypass</code></td></tr>
+    <tr><td>3306 / 6379 / 18080 / 9092 被占用</td><td>脚本会中止并提示。先停掉占用程序（如本机已装的 MySQL / Redis 服务）</td></tr>
+    <tr><td>5060 / 554 / 1935 / 20000 / 8000 被占用</td><td>仅警告，对应功能不可用（如百度网盘常占 10000，本方案已改用 20000）</td></tr>
+    <tr><td>ZLM 启动失败 / 9092 无响应</td><td>查看 <code>runtime\logs\zlm-console.err.log</code>；确认 <code>runtime\zlm\MediaServer.exe</code> 完整</td></tr>
+    <tr><td>需要截图 / 转推功能</td><td>将 <code>ffmpeg.exe</code> 放入 <code>runtime\zlm\</code> 即生效（不影响主流程）</td></tr>
+    <tr><td>脚本中文乱码</td><td>ps1 必须保持 UTF-8 带 BOM，请勿另存为 ANSI/GBK</td></tr>
+  </table>
+</section>
+
+<!-- ============================ Linux 离线 ============================ -->
+<section class="card" id="linux-offline">
+  <h2 class="chapter">三、Linux 离线包（Docker 镜像内置）</h2>
+
+  <h3>3.1 运行环境要求</h3>
+  <table>
+    <tr><th>项目</th><th>要求</th></tr>
+    <tr><td>操作系统</td><td>Linux x86_64（CentOS / Ubuntu / Debian / 麒麟等均可）</td></tr>
+    <tr><td>Docker</td><td><b>Docker Engine 20.10+</b> 与 <b>compose 插件 v2</b>（离线包唯一的系统依赖）</td></tr>
+    <tr><td>内存 / 磁盘</td><td>内存建议 4&nbsp;GB+；磁盘 ≥ 10&nbsp;GB（镜像约 2&nbsp;GB + 数据空间）</td></tr>
+    <tr><td>网络</td><td>无需外网、无需源码、无需 Node / Maven</td></tr>
+  </table>
+  <pre><code># 检查 Docker 环境（应输出 v2 版本号）
+docker --version
+docker compose version</code></pre>
+
+  <h3>3.2 安装与启动（三步）</h3>
+  <ol class="steps">
+    <li>
+      <b class="title">解压</b>
+      将 <code>wvp-linux-offline-3.0.0.tar.gz</code> 上传到服务器，解压并进入目录：
+      <pre><code>tar -xzf wvp-linux-offline-3.0.0.tar.gz
+cd wvp-linux-offline-3.0.0</code></pre>
+    </li>
+    <li>
+      <b class="title">安装（导入镜像 + 配置 IP）</b>
+      执行 <code>./install.sh --stream-ip &lt;本机真实IP&gt;</code>。
+      该步骤会 <code>docker load</code> 四个镜像（约 1~3 分钟），并把 <code>.env</code> 中的
+      <code>Stream_IP / SDP_IP / SIP_ShowIP</code> 替换为你给的 IP。
+      <b>IP 必须是设备能访问到的本机地址</b>，不能填 127.0.0.1。
+    </li>
+    <li>
+      <b class="title">启动并访问</b>
+      <pre><code>./start.sh              # bridge 网络（通用）
+./start.sh --host       # host 网络（Linux 生产推荐，SIP/RTP 直通无 NAT）</code></pre>
+      浏览器访问 <code>http://&lt;IP&gt;:18080</code>，默认账号 <code>admin / admin</code>。
+      首次启动约 1~2 分钟初始化数据库，可用 <code>docker compose logs -f wvp</code> 观察进度。
+    </li>
+  </ol>
+
+  <h3>3.3 停止与数据</h3>
+  <pre><code>./stop.sh        # 停止（自动识别上次的部署模式；数据保留在 ./data）</code></pre>
+  <ul>
+    <li><b>数据目录：</b><code>./data</code>（MySQL 库文件、Redis 持久化、录像），<code>down</code> 不会删除数据。</li>
+    <li><b>备份：</b>停止服务后复制整个 <code>./data</code> 目录。</li>
+    <li><b>换机 / 换网：</b>重新执行 <code>./install.sh --stream-ip &lt;新IP&gt;</code> 再启动即可。</li>
+  </ul>
+
+  <h3>3.4 bridge 与 host 两种网络模式</h3>
+  <table>
+    <tr><th>对比项</th><th>bridge（默认，<code>./start.sh</code>）</th><th>host（<code>./start.sh --host</code>）</th></tr>
+    <tr><td>原理</td><td>容器在独立网段，端口映射到宿主机</td><td>WVP / ZLM 直接使用宿主机网络栈</td></tr>
+    <tr><td>SIP / RTP</td><td>多一层 NAT，个别网络环境需调参</td><td><b>无 NAT</b>，SDP 地址天然正确，收流更稳</td></tr>
+    <tr><td>收流模式</td><td>单端口 20000（默认）</td><td>多端口 30000-30500（默认开启）</td></tr>
+    <tr><td>防火墙</td><td>放行 20000 tcp+udp</td><td>放行 20000 + <b>30000-30500 tcp+udp</b></td></tr>
+    <tr><td>平台</td><td>全平台（Windows/macOS 的 Docker 亦可用）</td><td><b>仅 Linux</b></td></tr>
+    <tr><td>建议</td><td>功能验证、非 Linux 环境</td><td><b>Linux 生产环境</b></td></tr>
+  </table>
+  <div class="note"><b>切换模式：</b>先 <code>./stop.sh</code>，再以另一种参数启动（如 <code>./stop.sh</code> → <code>./start.sh --host</code>）。两种模式共用同一份 <code>.env</code> 与 <code>./data</code>，切换不丢数据。</div>
+
+  <h3>3.5 Linux 离线包常见问题速查</h3>
+  <table>
+    <tr><th>现象</th><th>处理</th></tr>
+    <tr><td><code>docker load</code> 失败</td><td>确认 Docker 已运行（<code>docker info</code>）、磁盘充足（镜像约 2&nbsp;GB）；Docker &lt; 20.10 请先升级</td></tr>
+    <tr><td>提示“以下镜像未加载”</td><td>先执行 <code>./install.sh</code>（或带 <code>--stream-ip</code>）再启动</td></tr>
+    <tr><td>页面打不开</td><td>确认容器运行（<code>docker ps</code>）、18080 未被占用、防火墙放行；首次启动需等 1~2 分钟</td></tr>
+    <tr><td>页面能开但设备注册不上 / 预览黑屏</td><td>① <code>.env</code> 三个 IP 必须是本机真实 IP（重跑 <code>./install.sh --stream-ip</code>）；② 防火墙放行 5060 tcp+udp 与 20000 tcp+udp；③ bridge 仍有 NAT 问题时改用 <code>./start.sh --host</code></td></tr>
+  </table>
+</section>
+
+<!-- ============================ Linux 在线 ============================ -->
+<section class="card" id="linux-online">
+  <h2 class="chapter">四、Linux 在线版（现场构建）</h2>
+  <p>适用于<b>可联网</b>的 Linux 服务器：现场构建 WVP 镜像（含前端）并拉取依赖镜像，首次约 15~40 分钟。</p>
+  <ol class="steps">
+    <li>
+      <b class="title">准备目录</b>
+      将仓库中的 <code>linux/online/</code> 目录整体拷贝到服务器（或克隆仓库）。
+    </li>
+    <li>
+      <b class="title">修改 .env</b>
+      编辑 <code>.env</code>，把 <code>Stream_IP / SDP_IP / SIP_ShowIP</code> 改为本机真实 IP；如需改端口 / 密码也在该文件中调整。
+    </li>
+    <li>
+      <b class="title">构建并启动</b>
+      <pre><code>docker compose up -d --build                        # bridge 网络
+# 或 Linux 生产推荐：
+docker compose -f docker-compose.host.yml up -d --build</code></pre>
+      浏览器访问 <code>http://&lt;IP&gt;:18080</code>，账号 <code>admin / admin</code>。
+    </li>
+  </ol>
+  <table>
+    <tr><th>常用命令</th><th>说明</th></tr>
+    <tr><td><code>docker compose logs -f wvp</code></td><td>查看 WVP 启动日志</td></tr>
+    <tr><td><code>docker compose restart wvp</code></td><td>改完 <code>config/application.yml</code> 后重启生效</td></tr>
+    <tr><td><code>docker compose down</code></td><td>停止并删除容器（数据保留在 <code>./data</code>）</td></tr>
+    <tr><td><code>docker compose up -d</code></td><td>再次启动（镜像已构建）</td></tr>
+  </table>
+  <div class="note"><b>在线版与离线版的关系：</b>两者编排与配置逐字节一致；离线包 = 在线版目录 + <code>images/</code> 镜像包 + 三个安装脚本。在线版的详细说明见包内 <code>README.md</code>。</div>
+</section>
+
+<!-- ============================ 首次使用 ============================ -->
+<section class="card" id="first-use">
+  <h2 class="chapter">五、首次使用与设备接入</h2>
+
+  <h3>5.1 登录平台</h3>
+  <ol class="steps">
+    <li><b class="title">打开页面</b>浏览器访问 <code>http://&lt;服务器IP&gt;:18080</code>，默认账号 <code>admin / admin</code>。</li>
+    <li><b class="title">修改密码</b>登录后建议立即在“个人中心”修改管理员密码，生产环境务必修改。</li>
+  </ol>
+
+  <h3>5.2 接入国标（GB28181）摄像机 / NVR</h3>
+  <p>平台端无需额外配置，<b>在设备（摄像机 / NVR）侧</b>填写平台参数即可。设备注册成功后会自动出现在平台的“国标设备”列表中：</p>
+  <table>
+    <tr><th>设备侧配置项</th><th>填写值</th></tr>
+    <tr><td>SIP 服务器 ID</td><td><code>34020000002000000001</code></td></tr>
+    <tr><td>SIP 服务器域</td><td><code>3402000000</code></td></tr>
+    <tr><td>SIP 服务器地址</td><td><b>本平台服务器的真实 IP</b>（如 <code>192.168.1.100</code>）</td></tr>
+    <tr><td>SIP 服务器端口</td><td><code>5060</code></td></tr>
+    <tr><td>注册密码</td><td><code>12345678</code></td></tr>
+    <tr><td>设备编码</td><td>设备自身的 20 位国标编码（设备出厂或自行设置）</td></tr>
+    <tr><td>传输协议</td><td>UDP（推荐）</td></tr>
+  </table>
+  <div class="warn"><b>注册成功但预览黑屏？</b>90% 是以下两点：① 服务器防火墙未放行 <b>udp 5060</b> 与 <b>udp 20000</b>；
+  ② 包的 <code>.env</code>（Linux）或 <code>-StreamIp</code>（Windows）里的 IP 不是设备能访问到的真实 IP。</div>
+
+  <h3>5.3 预览与录像</h3>
+  <ul>
+    <li>进入“国标设备”列表 → 点击设备下的通道 → 实时预览；</li>
+    <li>播放走 ZLM 的 HTTP-FLV / WS-FLV（端口 9092），也可切换 HLS；</li>
+    <li>录像文件保存在数据目录（Windows <code>runtime\data\record</code>，Linux <code>./data/record</code>）。</li>
+  </ul>
+</section>
+
+<!-- ============================ 端口 ============================ -->
+<section class="card" id="ports">
+  <h2 class="chapter">六、端口与防火墙</h2>
+  <table>
+    <tr><th>端口</th><th>协议</th><th>用途</th><th>是否必须放行</th></tr>
+    <tr><td>18080</td><td>tcp</td><td>WVP Web / API（浏览器访问）</td><td>是</td></tr>
+    <tr><td>5060</td><td>tcp+udp</td><td>SIP 信令（设备注册）</td><td><b>是（尤其 udp）</b></td></tr>
+    <tr><td>9092</td><td>tcp</td><td>ZLM HTTP（播流 + API）</td><td>是</td></tr>
+    <tr><td>554 / 1935</td><td>tcp</td><td>RTSP / RTMP</td><td>按需</td></tr>
+    <tr><td>20000</td><td>tcp+udp</td><td>RTP 收流（单端口，默认模式）</td><td><b>是（尤其 udp）</b></td></tr>
+    <tr><td>30000-30500</td><td>tcp+udp</td><td>RTP 多端口收流（仅 Linux host 模式默认开启）</td><td>host 模式必放</td></tr>
+    <tr><td>8000 / 9000</td><td>tcp+udp / udp</td><td>WebRTC / SRT</td><td>按需</td></tr>
+  </table>
+
+  <h3>6.1 Windows 防火墙</h3>
+  <pre><code># 以管理员身份运行（放行 Web、SIP、RTP）
+New-NetFirewallRule -DisplayName "WVP-Web" -Direction Inbound -Protocol TCP -LocalPort 18080 -Action Allow
+New-NetFirewallRule -DisplayName "WVP-SIP-TCP" -Direction Inbound -Protocol TCP -LocalPort 5060 -Action Allow
+New-NetFirewallRule -DisplayName "WVP-SIP-UDP" -Direction Inbound -Protocol UDP -LocalPort 5060 -Action Allow
+New-NetFirewallRule -DisplayName "WVP-RTP-UDP" -Direction Inbound -Protocol UDP -LocalPort 20000 -Action Allow</code></pre>
+
+  <h3>6.2 Linux 防火墙</h3>
+  <pre><code># firewalld（CentOS / 麒麟等）
+firewall-cmd --permanent --add-port=18080/tcp
+firewall-cmd --permanent --add-port=5060/tcp --add-port=5060/udp
+firewall-cmd --permanent --add-port=20000/tcp --add-port=20000/udp
+firewall-cmd --reload
+
+# ufw（Ubuntu / Debian）
+ufw allow 18080/tcp
+ufw allow 5060/tcp
+ufw allow 5060/udp
+ufw allow 20000/tcp
+ufw allow 20000/udp
+
+# host 模式还需放行多端口段：
+firewall-cmd --permanent --add-port=30000-30500/tcp --add-port=30000-30500/udp</code></pre>
+  <div class="danger"><b>切记：</b>云服务器的<b>安全组</b>同样要放行上述端口；只配系统防火墙不配安全组，设备依然注册不上。</div>
+</section>
+
+<!-- ============================ 账号 ============================ -->
+<section class="card" id="accounts">
+  <h2 class="chapter">七、默认账号与安全建议</h2>
+  <table>
+    <tr><th>账号</th><th>默认值</th><th>说明</th></tr>
+    <tr><td>WVP 管理员</td><td><code>admin / admin</code></td><td>Web 登录</td></tr>
+    <tr><td>SIP 设备接入</td><td>ID <code>34020000002000000001</code> / 域 <code>3402000000</code> / 密码 <code>12345678</code></td><td>设备注册用</td></tr>
+    <tr><td>MySQL</td><td>root <code>wvp_root_123456</code>；业务库 <code>wvp</code>，账号 <code>wvp / wvp_123456</code></td><td>仅本机访问，不对外开放</td></tr>
+    <tr><td>Redis</td><td><code>wvp_redis_123456</code></td><td>仅本机访问</td></tr>
+    <tr><td>ZLM API 密钥</td><td><code>wvppro-zlm-3.0.0-9f3a7c2e5b1d4068a1c9</code></td><td>WVP 与 ZLM 之间内部使用</td></tr>
+  </table>
+
+  <h3>7.1 修改方式</h3>
+  <table>
+    <tr><th>对象</th><th>修改方法</th></tr>
+    <tr><td>WVP 管理员密码</td><td>登录后个人中心修改（记不住旧密码时：重置数据库恢复默认，但<b>数据会清空</b>）</td></tr>
+    <tr><td>SIP 注册密码（Linux）</td><td>改 <code>.env</code> 的 <code>SIP_Password</code> 后重启 WVP 容器；或 <code>./install.sh --stream-ip ...</code> 同法</td></tr>
+    <tr><td>SIP 注册密码（Windows）</td><td>仅首次初始化生效：<code>.\install.ps1 -SipPassword &lt;新密码&gt;</code>（已初始化需重置库）</td></tr>
+    <tr><td>MySQL / Redis / ZLM 密钥</td><td>Linux 改 <code>.env</code>；Windows 传参 <code>-MysqlRootPassword -MysqlPassword -RedisPassword -ZlmSecret</code>（均仅首次初始化生效）</td></tr>
+  </table>
+
+  <h3>7.2 安全建议（生产环境）</h3>
+  <ul>
+    <li>立即修改 WVP 管理员密码与 SIP 注册密码，不要沿用默认值；</li>
+    <li>用显式参数固定对外 IP（Windows <code>-StreamIp</code>；Linux <code>--stream-ip</code>），避免多网卡选错地址；</li>
+    <li>仅放行必要端口，MySQL / Redis 不要暴露到局域网；</li>
+    <li>视频链路优先使用 <code>http://IP:9092</code> 直连播放（http-flv）；</li>
+    <li>定期备份 <code>data</code> 目录与 <code>.env</code>（或 Windows 的 <code>runtime\config</code>）。</li>
+  </ul>
+</section>
+
+<!-- ============================ FAQ ============================ -->
+<section class="card" id="faq">
+  <h2 class="chapter">八、常见问题（FAQ）</h2>
+
+  <h3>通用</h3>
+  <table>
+    <tr><th>问题</th><th>处理</th></tr>
+    <tr><td><b>页面能打开，但设备注册不上</b></td><td>① 检查设备侧 SIP 地址/端口/域/密码；② 放行 <b>udp 5060</b>（云服务器还要放安全组）；③ 设备与服务器需网络可达</td></tr>
+    <tr><td><b>设备注册成功，但预览黑屏</b></td><td>① <code>.env</code>/<code>-StreamIp</code> 的 IP 不是设备可达的真实 IP；② 未放行 <b>udp 20000</b>（Linux host 模式为 30000-30500）；③ bridge 模式 NAT 问题时改用 host 模式</td></tr>
+    <tr><td><b>重启后要等多久</b></td><td>Windows 约 30~60 秒；Linux 首次约 1~2 分钟（初始化数据库）。日志可见“启动完成”或 WVP 就绪</td></tr>
+    <tr><td><b>换了一台机器 / 换了网段</b></td><td>Linux：重跑 <code>./install.sh --stream-ip &lt;新IP&gt;</code> 再启动；Windows：<code>.\start.ps1 -SkipDownload -StreamIp &lt;新IP&gt;</code></td></tr>
+    <tr><td><b>系统时间不对会导致注册失败吗</b></td><td>会。SIP 注册带时间校验，请确保服务器时间准确（建议开启 NTP 时间同步）</td></tr>
+    <tr><td><b>在 WSL2 里运行 Linux 版</b></td><td>主机浏览器用 <code>http://localhost:18080</code> 访问最稳；若要用局域网 IP 访问，需在 <code>%USERPROFILE%\.wslconfig</code> 启用 <code>networkingMode=mirrored</code> 与 <code>[experimental] hostAddressLoopback=true</code>，并 <code>wsl --shutdown</code> 重启</td></tr>
+  </table>
+
+  <h3>Windows 专属</h3>
+  <table>
+    <tr><th>问题</th><th>处理</th></tr>
+    <tr><td>“禁止运行脚本” / “无法加载 ps1 文件”</td><td>用 <code>powershell -ExecutionPolicy Bypass -File .\start.ps1</code>，bat 已内置 Bypass</td></tr>
+    <tr><td>本机已装 MySQL / Redis 服务</td><td>先停止系统服务（占用 3306 / 6379 会导致启动失败），再启动本包</td></tr>
+    <tr><td>中文乱码</td><td>ps1 必须保持 UTF-8 带 BOM；请用原包文件，勿转码</td></tr>
+  </table>
+
+  <h3>Linux 专属</h3>
+  <table>
+    <tr><th>问题</th><th>处理</th></tr>
+    <tr><td><code>./install.sh</code> 报 docker load 失败</td><td><code>docker info</code> 确认守护进程运行、磁盘 ≥ 10GB、Docker ≥ 20.10</td></tr>
+    <tr><td>start.sh 报“镜像未加载”</td><td>先执行 <code>./install.sh</code>（带 <code>--stream-ip</code>）</td></tr>
+    <tr><td><code>docker ps</code> 看不到容器</td><td><code>docker compose logs</code> 查错误；端口被占用时先停旧服务</td></tr>
+  </table>
+</section>
+
+<!-- ============================ 维护 ============================ -->
+<section class="card" id="maintenance">
+  <h2 class="chapter">九、数据备份、升级与卸载</h2>
+
+  <h3>9.1 数据位置与备份</h3>
+  <table>
+    <tr><th>平台</th><th>数据目录</th><th>备份方法</th></tr>
+    <tr><td>Windows</td><td><code>runtime\data\</code></td><td><code>stop.bat</code> 后复制该目录</td></tr>
+    <tr><td>Linux</td><td><code>./data</code>（编排目录下）</td><td><code>./stop.sh</code> 后复制该目录</td></tr>
+  </table>
+  <p>数据包含：MySQL 数据库（设备/通道/用户/配置）、Redis 快照、录像文件。</p>
+
+  <h3>9.2 升级版本</h3>
+  <ol class="steps">
+    <li><b class="title">Windows</b>解压新版本包到新目录 → 把旧目录的 <code>runtime\data</code> 复制到新目录对应位置 → 启动 <code>start.bat</code>（配置每次启动自动重新渲染，无需手工迁移）。</li>
+    <li><b class="title">Linux</b>解压新包 → <code>./install.sh --stream-ip &lt;IP&gt;</code> → <code>./start.sh</code>；数据在 <code>./data</code>，升级不丢（跨大版本升级前先备份）。</li>
+  </ol>
+
+  <h3>9.3 卸载</h3>
+  <table>
+    <tr><th>平台</th><th>卸载方法</th></tr>
+    <tr><td>Windows</td><td><code>stop.bat</code> 后直接删除解压目录（无注册表、无系统服务、无开机自启残留）</td></tr>
+    <tr><td>Linux</td><td><code>./stop.sh</code> → 删除解压目录；如需清理镜像：<code>docker rmi wvp-pro:3.0.0 mysql:8.0 redis:7-alpine zlmediakit/zlmediakit:master</code></td></tr>
+  </table>
+</section>
+
+</main>
+<footer>WVP-PRO 3.0.0 用户手册 · 请随交付包分发 · 端口与账号如有调整以包内 README 为准</footer>
+</body>
+</html>
